@@ -165,15 +165,15 @@ class Mongodbtool(object):
         if not host:
             host="101.6.31.11"
         self.client = pymongo.MongoClient("mongodb://"+host+":27017/")
-        self.mydb=client.topread
-        self.article_cl = mydb.article
-        self.user_cl=mydb.user
-        self.read_cl=mydb.read
-        self.beread_cl=mydb.be_read
-        self.popularrank_cl=mydb.popular_rank
+        self.mydb=self.client.topread
+        self.article_cl = self.mydb.article
+        self.user_cl=self.mydb.user
+        self.read_cl=self.mydb.read
+        self.beread_cl=self.mydb.be_read
+        self.popularrank_cl=self.mydb.popular_rank
         self.fs = gridfs.GridFS(self.mydb)
 
-    def insert_a_file(self, filepath):
+    def put_a_file(self, filepath):
 
         filename=os.path.split(filepath)[1]
         with open(filepath, "rb") as f:
@@ -181,7 +181,7 @@ class Mongodbtool(object):
         
         return fid
 
-    def retrive_a_file(self, filename):
+    def get_a_file(self, filename):
         f = self.fs.find_one({"filename": filename})
         
         return f
@@ -195,6 +195,57 @@ class Mongodbtool(object):
 
         return [db1,db2]
 
+    def query_popular(self, mydb, timepoint, lim):
+        timestamp=str(int(timepoint.timestamp()*1000))
+        beread_cl=mydb.be_read
+        pop=beread_cl.find({"timestamp":{"$gt":timestamp}},{"readNum":1,"aid":1}).sort("readNum",-1).limit(lim)
+        aids=retri_lis(pop,"aid")
+        return aids
+
+    def get_popular(self, mydb, curr_time=None):
+        if not mydb:
+            client = pymongo.MongoClient("mongodb://101.6.31.11:27017/")
+            mydb=client.topread
+
+        if not curr_time:
+            # curr_time=datetime.datetime.now()
+            curr_time=datetime.datetime.fromtimestamp(1506000011.000)
+
+        article_cl = mydb.article
+        user_cl=mydb.user
+        read_cl=mydb.read
+        beread_cl=mydb.be_read
+
+        timestamp=str(int(curr_time.timestamp()*1000))
+
+        dla_time=datetime.timedelta(days=1)
+        daily_aids=query_popular(mydb, curr_time-dla_time, 5)
+        mydb.popular_rank.insert_one({
+            "id":"p"+timestamp,
+            "timestamp":timestamp,
+            "temporalGranularity":"daily",
+            "articleAidList":daily_aids
+        })
+
+        dla_time=datetime.timedelta(days=7)
+        weekly_aids=query_popular(mydb, curr_time-dla_time, 5)
+        mydb.popular_rank.insert_one({
+            "id":"p"+timestamp,
+            "timestamp":timestamp,
+            "temporalGranularity":"weekly",
+            "articleAidList":weekly_aids
+        })
+
+        dla_time=datetime.timedelta(days=30)
+        monthly_aids=query_popular(mydb, curr_time-dla_time, 5)
+        mydb.popular_rank.insert_one({
+            "id":"p"+timestamp,
+            "timestamp":timestamp,
+            "temporalGranularity":"monthly",
+            "articleAidList":monthly_aids
+        })
+
+
 
 if __name__=="__main__":
     pass
@@ -205,9 +256,11 @@ if __name__=="__main__":
 
     # store_file_article()
 
-    client = pymongo.MongoClient("mongodb://101.6.31.11:27017/")
-    mydb=client.topread
-    f=retrive_a_file(mydb,"text_a40.txt")
+    mgd=Mongodbtool()
+    # client = pymongo.MongoClient("mongodb://101.6.31.11:27017/")
+    mydb=mgd.get_db()
+    # mydb=client.topread
+    f=mgd.get_a_file("text_a40.txt")
     txt=f.read()
     print(txt)
 
