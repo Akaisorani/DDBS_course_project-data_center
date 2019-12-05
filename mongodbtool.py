@@ -199,13 +199,16 @@ class Mongodbtool(object):
         timestamp=str(int(timepoint.timestamp()*1000))
         beread_cl=mydb.be_read
         pop=beread_cl.find({"timestamp":{"$gt":timestamp}},{"readNum":1,"aid":1}).sort("readNum",-1).limit(lim)
-        aids=retri_lis(pop,"aid")
-        return aids
+        aidnums=list(pop)
+        return aidnums
 
-    def get_popular(self, mydb, curr_time=None):
-        if not mydb:
-            client = pymongo.MongoClient("mongodb://101.6.31.11:27017/")
-            mydb=client.topread
+    # curr_time is a datetime class instance, to get the time now, you can use:
+    #   import datetime
+    #   curr_time=datetime.datetime.now()
+    # or from a timestamp:
+    #   curr_time=datetime.datetime.fromtimestamp(1506000011.000)
+    def get_popular(self, pop_type="daily", curr_time=None):
+        mydb=self.mydb
 
         if not curr_time:
             # curr_time=datetime.datetime.now()
@@ -218,33 +221,20 @@ class Mongodbtool(object):
 
         timestamp=str(int(curr_time.timestamp()*1000))
 
-        dla_time=datetime.timedelta(days=1)
-        daily_aids=query_popular(mydb, curr_time-dla_time, 5)
-        mydb.popular_rank.insert_one({
-            "id":"p"+timestamp,
-            "timestamp":timestamp,
-            "temporalGranularity":"daily",
-            "articleAidList":daily_aids
-        })
-
-        dla_time=datetime.timedelta(days=7)
-        weekly_aids=query_popular(mydb, curr_time-dla_time, 5)
-        mydb.popular_rank.insert_one({
-            "id":"p"+timestamp,
-            "timestamp":timestamp,
-            "temporalGranularity":"weekly",
-            "articleAidList":weekly_aids
-        })
-
-        dla_time=datetime.timedelta(days=30)
-        monthly_aids=query_popular(mydb, curr_time-dla_time, 5)
-        mydb.popular_rank.insert_one({
-            "id":"p"+timestamp,
-            "timestamp":timestamp,
-            "temporalGranularity":"monthly",
-            "articleAidList":monthly_aids
-        })
-
+        if pop_type=="daily":
+            dla_time=datetime.timedelta(days=1)
+            daily_aids=self.query_popular(mydb, curr_time-dla_time, 5)
+            return daily_aids
+        elif pop_type=="weekly":
+            dla_time=datetime.timedelta(days=7)
+            weekly_aids=self.query_popular(mydb, curr_time-dla_time, 5)
+            return weekly_aids
+        elif pop_type=="monthly":
+            dla_time=datetime.timedelta(days=30)
+            monthly_aids=self.query_popular(mydb, curr_time-dla_time, 5)
+            return monthly_aids
+        else:
+            raise ValueError("invalid pop_type")
 
 
 if __name__=="__main__":
@@ -257,10 +247,16 @@ if __name__=="__main__":
     # store_file_article()
 
     mgd=Mongodbtool()
-    # client = pymongo.MongoClient("mongodb://101.6.31.11:27017/")
     mydb=mgd.get_db()
-    # mydb=client.topread
-    f=mgd.get_a_file("text_a40.txt")
-    txt=f.read()
-    print(txt)
+
+    # get a file
+    # f=mgd.get_a_file("text_a40.txt")
+    # txt=f.read()
+    # print(txt)
+
+    # get popular 
+    res=mgd.get_popular(pop_type="daily",curr_time=datetime.datetime.fromtimestamp(1506000011.000))
+    print(res)
+
+
 
