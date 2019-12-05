@@ -236,6 +236,53 @@ class Mongodbtool(object):
         else:
             raise ValueError("invalid pop_type")
 
+    def trigger_beread(self, aid):
+        mydb=self.mydb
+
+        article_cl = mydb.article
+        user_cl=mydb.user
+        read_cl=mydb.read
+
+        be_read_lis=[]
+        article=list(article_cl.find({"aid":aid}))[0]
+
+        entry={}
+        entry['id']="br"+article["aid"]
+        entry['aid']=article["aid"]
+        entry['timestamp']=article["timestamp"]
+
+        entry["readNum"]=list(read_cl.aggregate([
+            {"$match":{"aid":entry['aid'],"readOrNot":'1'}},
+            {"$count":"cnt"}
+        ]))[0]["cnt"]
+
+        entry["readUidList"]=retri_lis(read_cl.find({"aid":entry['aid'],"readOrNot":'1'},{"_id":0,"uid":1}),"uid")
+
+        entry["commentNum"]=list(read_cl.aggregate([
+            {"$match":{"aid":entry['aid'],"commentOrNot":'1'}},
+            {"$count":"cnt"}
+        ]))[0]["cnt"]
+
+        entry["commentUidList"]=retri_lis(read_cl.find({"aid":entry['aid'],"commentOrNot":'1'},{"_id":0,"uid":1}),"uid")
+
+        entry["agreeNum"]=list(read_cl.aggregate([
+            {"$match":{"aid":entry['aid'],"agreeOrNot":'1'}},
+            {"$count":"cnt"}
+        ]))[0]["cnt"]
+
+        entry["agreeUidList"]=retri_lis(read_cl.find({"aid":entry['aid'],"agreeOrNot":'1'},{"_id":0,"uid":1}),"uid")
+
+        entry["shareNum"]=list(read_cl.aggregate([
+            {"$match":{"aid":entry['aid'],"shareOrNot":'1'}},
+            {"$count":"cnt"}
+        ]))[0]["cnt"]
+
+        entry["shareUidList"]=retri_lis(read_cl.find({"aid":entry['aid'],"shareOrNot":'1'},{"_id":0,"uid":1}),"uid")    
+
+        # print("read_to_insert_num",len(be_read_lis))
+
+        mydb.be_read.update_many({"aid":aid},{"$set":entry})
+
 
 if __name__=="__main__":
     pass
@@ -249,14 +296,18 @@ if __name__=="__main__":
     mgd=Mongodbtool()
     mydb=mgd.get_db()
 
+    # (1)
     # get a file
     # f=mgd.get_a_file("text_a40.txt")
     # txt=f.read()
     # print(txt)
 
+    # (2)
     # get popular 
-    res=mgd.get_popular(pop_type="daily",curr_time=datetime.datetime.fromtimestamp(1506000011.000))
-    print(res)
+    # res=mgd.get_popular(pop_type="daily",curr_time=datetime.datetime.fromtimestamp(1506000011.000))
+    # print(res)
 
-
+    # (3)
+    # triger be_read after insert or update article/read table
+    mgd.trigger_beread("0")
 
