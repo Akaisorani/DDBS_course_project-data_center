@@ -189,6 +189,9 @@ class Mongodbtool(object):
     def get_db(self):
         return self.mydb
 
+    def get_client(self):
+        return self.client
+
     def get_secondarys(self):
         db1=pymongo.MongoClient("mongodb://"+"101.6.31.12"+":27017/").topread
         db2=pymongo.MongoClient("mongodb://"+"101.6.31.13"+":27017/").topread
@@ -282,6 +285,9 @@ class Mongodbtool(object):
         # print("read_to_insert_num",len(be_read_lis))
 
         mydb.be_read.update_many({"aid":aid},{"$set":entry})
+    
+    def get_replica_set_status(self):
+        return self.client.admin.command('replSetGetStatus')
 
 
 if __name__=="__main__":
@@ -309,5 +315,10 @@ if __name__=="__main__":
 
     # (3)
     # triger be_read after insert or update article/read table
-    mgd.trigger_beread("0")
+    # mgd.trigger_beread("0")
+
+    # (4)
+    # get the status of replicas
+    res=mgd.get_replica_set_status()
+    print(res)
 
