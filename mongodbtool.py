@@ -289,6 +289,9 @@ class Mongodbtool(object):
     def get_replica_set_status(self):
         return self.client.admin.command('replSetGetStatus')
 
+    def get_server_status(self):
+        return self.mydb.command("serverStatus")
+
 
 if __name__=="__main__":
     pass
@@ -321,4 +324,10 @@ if __name__=="__main__":
     # get the status of replicas
     res=mgd.get_replica_set_status()
     print(res)
+
+    # (5)
+    # server status
+    res=mgd.get_server_status()
+    print(res)
+
 
