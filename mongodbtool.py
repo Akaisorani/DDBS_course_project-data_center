@@ -292,6 +292,36 @@ class Mongodbtool(object):
     def get_server_status(self):
         return self.mydb.command("serverStatus")
 
+    def get_status(self):
+        rs_status=mgd.get_replica_set_status()
+        server_status=mgd.get_server_status()
+
+        res_dic=dict()
+        res_dic["members"]=rs_status['members']
+        res_dic['connections']=server_status['connections']
+        res_dic['globalLock']=server_status['globalLock']
+        res_dic['locks']=server_status['locks']
+        res_dic['network']=dict()
+        res_dic['network']['bytesIn']=server_status['network']['bytesIn']
+        res_dic['network']['bytesOut']=server_status['network']['bytesOut']
+        res_dic['opLatencies']=server_status['opLatencies']
+        res_dic['opcounters']=server_status['opcounters']
+        res_dic['mem']=server_status['mem']
+
+        return res_dic
+
+import json,bson
+class DateEncoder(json.JSONEncoder):  
+    def default(self, obj):  
+        if isinstance(obj, datetime.datetime):  
+            return obj.strftime('%Y-%m-%d %H:%M:%S')  
+        elif isinstance(obj, datetime.date):
+            return obj.strftime("%Y-%m-%d")
+        elif isinstance(obj, bson.timestamp.Timestamp):
+            return obj.as_datetime().strftime("%Y-%m-%d")
+        else:  
+            return json.JSONEncoder.default(self, obj) 
+
 
 if __name__=="__main__":
     pass
@@ -324,10 +354,19 @@ if __name__=="__main__":
     # get the status of replicas
     res=mgd.get_replica_set_status()
     print(res)
-
+    # print(res['optimes']['lastCommittedOpTime']['ts'].as_datetime())
+    # with open("tmpreplica.json","w") as f:
+    #     json.dump(res,f)
     # (5)
     # server status
     res=mgd.get_server_status()
     print(res)
+    # with open("tmpstatus.json","w") as f:
+    #     json.dump(res,f)
+
+
+    res=mgd.get_status()
+    print(res)
+    
 
 
