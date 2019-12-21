@@ -161,10 +161,10 @@ def store_file_article():
 
 
 class Mongodbtool(object):
-    def __init__(self, host=None):
+    def __init__(self, hostport=None):
         if not host:
-            host="101.6.31.11"
-        self.client = pymongo.MongoClient("mongodb://"+host+":27017/")
+            host="166.111.121.55:17227"
+        self.client = pymongo.MongoClient("mongodb://"+hostport+"/")
         self.mydb=self.client.topread
         self.article_cl = self.mydb.article
         self.user_cl=self.mydb.user
@@ -293,8 +293,8 @@ class Mongodbtool(object):
         return self.mydb.command("serverStatus")
 
     def get_status(self):
-        rs_status=mgd.get_replica_set_status()
-        server_status=mgd.get_server_status()
+        rs_status=self.get_replica_set_status()
+        server_status=self.get_server_status()
 
         res_dic=dict()
         res_dic["members"]=rs_status['members']

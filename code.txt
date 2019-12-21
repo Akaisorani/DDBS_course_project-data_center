@@ -1,0 +1,103 @@
+rs.initiate(
+  {
+    _id : "rs0",
+    members: [
+      { _id : 0, host : "mongodb0.example.net:27018" },
+      { _id : 1, host : "mongodb1.example.net:27018" }
+    ]
+  }
+)
+
+
+rs.initiate(
+  {
+    _id: "rs1",
+    configsvr: true,
+    members: [
+      { _id : 0, host : "mongodb2.example.net:27019" }
+    ]
+  }
+)
+
+rs.initiate(
+  {
+    _id : "rs2",
+    members: [
+      { _id : 0, host : "mongodb3.example.net:27018" }
+    ]
+  }
+)
+
+
+# mongos.conf
+
+# where to write logging data.
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongods.log
+
+# network interfaces
+net:
+  port: 27017
+  bindIp: 127.0.0.1,101.6.31.11
+#  bindIpAll: true
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+
+sharding:
+  configDB: "rs1"/mongodb2.example.net:27019
+
+
+
+
+sh.addShard( "rs0/mongodb0.example.net:27018,mongodb1.example.net:27018")
+sh.addShard( "rs2/mongodb3.example.net:27018")
+
+
+sh.shardCollection(
+  "topread.user",
+  { region: 1 },
+)
+sh.shardCollection(
+  "topread.article",
+  { category: 1 },
+)
+
+sh.updateZoneKeyRange(
+   "topread.user",
+   { region: "Beijing" },
+   { region: "Beijinh" },
+   "userBJ"
+);
+
+sh.updateZoneKeyRange(
+   "topread.user",
+   { region: "Hong Kong" },
+   { region: "Hong Konh" },
+   "userHK"
+);
+
+sh.updateZoneKeyRange(
+   "topread.article",
+   { category: "science" },
+   { category: "sciencf" },
+   "articleSC"
+);
+
+sh.updateZoneKeyRange(
+   "topread.article",
+   { category: "technology" },
+   { category: "technologz" },
+   "articleTE"
+);
+
+sh.addShardToZone("rs0","userBJ") 
+sh.addShardToZone("rs2","userHK")
+
+sh.addShardToZone("rs0","articleSC")
+sh.addShardToZone("rs2","articleSC")
+sh.addShardToZone("rs2","articleTE")
+
+sh.removeShardFromZone("rs0","Beijing")
