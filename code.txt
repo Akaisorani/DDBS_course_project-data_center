@@ -101,3 +101,16 @@ sh.addShardToZone("rs2","articleSC")
 sh.addShardToZone("rs2","articleTE")
 
 sh.removeShardFromZone("rs0","Beijing")
+
+
+101.6.31.11     mongodb0.example.net
+101.6.31.12     mongodb1.example.net
+101.6.31.13     mongodb2.example.net
+101.6.31.15     mongodb3.example.net
+
+
+
+172.6.31.11     mongodb0.example.net
+172.6.31.12     mongodb1.example.net
+172.6.31.13     mongodb2.example.net
+172.6.31.15     mongodb3.example.net

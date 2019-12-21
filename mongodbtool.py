@@ -162,8 +162,8 @@ def store_file_article():
 
 class Mongodbtool(object):
     def __init__(self, hostport=None):
-        if not host:
-            host="166.111.121.55:17227"
+        if not hostport:
+            hostport="166.111.121.55:17227"
         self.client = pymongo.MongoClient("mongodb://"+hostport+"/")
         self.mydb=self.client.topread
         self.article_cl = self.mydb.article
@@ -292,21 +292,37 @@ class Mongodbtool(object):
     def get_server_status(self):
         return self.mydb.command("serverStatus")
 
-    def get_status(self):
-        rs_status=self.get_replica_set_status()
-        server_status=self.get_server_status()
+    def get_list_shards(self):
+        return self.client.admin.command("listShards")
 
+    def get_status(self):
         res_dic=dict()
-        res_dic["members"]=rs_status['members']
-        res_dic['connections']=server_status['connections']
-        res_dic['globalLock']=server_status['globalLock']
-        res_dic['locks']=server_status['locks']
-        res_dic['network']=dict()
-        res_dic['network']['bytesIn']=server_status['network']['bytesIn']
-        res_dic['network']['bytesOut']=server_status['network']['bytesOut']
-        res_dic['opLatencies']=server_status['opLatencies']
-        res_dic['opcounters']=server_status['opcounters']
-        res_dic['mem']=server_status['mem']
+
+        try:
+            rs_status=self.get_replica_set_status()
+            res_dic["members"]=rs_status['members']
+        except Exception as e:
+            print(e)
+
+        try:
+            server_status=self.get_server_status()
+            res_dic['connections']=server_status['connections']
+            res_dic['globalLock']=server_status['globalLock']
+            res_dic['locks']=server_status['locks']
+            res_dic['network']=dict()
+            res_dic['network']['bytesIn']=server_status['network']['bytesIn']
+            res_dic['network']['bytesOut']=server_status['network']['bytesOut']
+            res_dic['opLatencies']=server_status['opLatencies']
+            res_dic['opcounters']=server_status['opcounters']
+            res_dic['mem']=server_status['mem']
+        except Exception as e:
+            print(e)
+        
+        try:
+            sh_status=self.get_list_shards()
+            res_dic['shards']=sh_status['shards']
+        except Exception as e:
+            print(e)
 
         return res_dic
 
@@ -352,8 +368,8 @@ if __name__=="__main__":
 
     # (4)
     # get the status of replicas
-    res=mgd.get_replica_set_status()
-    print(res)
+    # res=mgd.get_replica_set_status()
+    # print(res)
     # print(res['optimes']['lastCommittedOpTime']['ts'].as_datetime())
     # with open("tmpreplica.json","w") as f:
     #     json.dump(res,f)
@@ -365,8 +381,12 @@ if __name__=="__main__":
     #     json.dump(res,f)
 
 
-    res=mgd.get_status()
-    print(res)
+
+    # res=mgd.client.admin.command("listShards")
+    # print(res)
+
+    # res=mgd.get_status()
+    # print(res)
     
 
 
